@@ -1,0 +1,9 @@
+	A	B	C	D=-AB	E=-BC	Treatments
+(1)	-	-	-	-	-	(1)
+a	+	-	-	+	-	ad
+b	-	+	-	+	+	bde
+ab	+	+	-	-	+	abe
+c	-	-	+	-	+	ce
+ac	+	-	+	+	+	acde
+bc	-	+	+	+	-	bcd
+abc	+	+	+	-	-	abc
