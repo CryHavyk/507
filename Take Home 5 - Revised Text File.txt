@@ -1,0 +1,160 @@
+---
+output:
+  html_document: default
+  word_document: default
+---
+#Take Home 5  
+Luke Sturgeon  
+Stat 507  
+Due Date: 12/12/2018  
+
+##Problem 1  
+###Part 1
+
+```{r, cache=T, warning=F, message=F}
+install.packages("ggplot2", repos="https://ftp.osuosl.org/pub/cran/")
+install.packages("gplots", repos="https://ftp.osuosl.org/pub/cran/")
+install.packages("effects", repos="https://ftp.osuosl.org/pub/cran/")
+install.packages("multcomp", repos="https://ftp.osuosl.org/pub/cran/")
+install.packages("dplyr", repos="https://ftp.osuosl.org/pub/cran/")
+install.packages("kableExtra", repos="https://ftp.osuosl.org/pub/cran/")
+library(ggplot2)
+library(gplots)
+library(effects)
+library(multcomp)
+library(dplyr)
+library(kableExtra)
+```
+```{r, message=F, cache=T, warning=F}
+prob1.dat <- read.table("http://www.webpages.uidaho.edu/~chrisw/stat507live/fracfactorialex52018.txt", header=TRUE)
+tofactor <- c("a", "b", "c", "d", "e")
+prob1.dat[,tofactor] <- lapply(prob1.dat[,tofactor], factor)
+prob1.aov <- aov(lm(y ~ a*b*c*d, data = prob1.dat))
+qqnorm(prob1.aov)
+anova(lm(y ~ a*b*c*d, data = prob1.dat))
+# probably not necessary since we had 16 degrees of freedom in the residual in the first lm
+prob1.aov2 <- aov(lm(y ~ a + b + a:b:c:d, data= prob1.dat))
+qqnorm(prob1.aov2)
+anova(lm(y ~ a + b + a:b:c:d, data= prob1.dat))
+```
+
+###Part 2  
+In this experiment, we used the abcd interaction as an alias for the e main effect. We assume that any significant effects are cause by the main effect rather than the four way interaction. Because of this, we can see from the ANOVA table that this main effect was the only significant main effect on the dependent variable. Main effects a and b were close, so a second model was run, removing all non-signifcant terms. When the model was re-run using A, B, and ABCD as predictors for the dependent variable, none of these were significant. This last step was probably not necessary since this experiment was done with replications, affording the first model 16 degrees of freedom. Taking away the other variables in the model to add to these degrees of freedom is nice, but likely not necessary since 16 is a decent amount.  
+
+###Part 3  
+```{r, message=F, cache=T, warning=F}
+par(mfrow=c(2,2))  
+plot(lm(y ~ a*b*c*d, data = prob1.dat))
+par(mfrow=c(1,1))
+```
+
+These assumptions are dubious. The Normal Q-Q plot shows the tails veer off the line pretty far and I don't think I've ever seen a symmetric residuals vs. Factor Levels graph. I would be careful with how confident I am with these results.
+
+###Part 4  
+In conclusion, the fifth variable, e, did have a significant impact on our dependent variable, y. Our assumptions are tentatively met, meaning these results may be need to be handled with caution when stating how confident we are in them. 
+
+##Problem 2  
+###Part 1  
+I'll forgo the arduous task of finding all of the odd ABD and then odd BCE treatment combinations. The eight treatment combinations used in this design would be: B, AC, ABD, CD, AE, BCE, DE, ABCDE.
+
+###Part 2  
+This is a resolution three model; $$-ABD = -BCE = ADCE$$ the smallest interaction is of three terms.
+
+###Part 3  
+We can find our alias structure by multiplying our treatment combinations by I. For example the alias structure for B is $$B * I = B * ABCDE = AB^2CDE = ACDE$$ Repeating this for the main effects and two way treatment interactions, we get $$ AC = BDE$$ $$CD = ABE$$ $$AE = BCD$$ $$DE = ABC$$
+
+##Problem 3
+###Part 1  
+
+```{r, message=F, cache=T, warning=F}
+prob3.dat <- read.table("http://www.webpages.uidaho.edu/~chrisw/stat507live/HousePricesFall2018a.txt", header=T)
+aov.sansfootage <- aov(lm(prob3.dat$price ~ prob3.dat$group, data=prob3.dat))
+summary(aov.sansfootage)
+```
+
+According to this ANOVA table, which city the house is in did not have a significant effect on the price. The average house price did not vary significantly between the three cities.
+
+```{r, message=F, cache=T, warning=F}
+ggplot(prob3.dat, aes(x=group, y=price, fill=group)) +
+        geom_boxplot() +
+        ggtitle("Price of Houses by City") +
+        theme(legend.position="none")
+```
+
+This shouldn't be too suprising given the boxplot above. None of the means differ from one to the other and the inner quartiles are similar.
+
+###Part 2  
+
+```{r, message=F, cache=T, warning=F}
+ggplot(prob3.dat, aes(x=sqft, y=price, color=group, size=price)) +
+        geom_point() +
+        ggtitle("House Price by Square Footage")
+```
+
+The scatterplot shows a general trend of price increasing as square footage of the house increases. The plot is colored by city and the size of the dot corresponds to relative price of the house. Albuquerque seems to increase in price faster than the other two cities. Adding a line to the graph would make this clearer.
+
+```{r, message=F, cache=T, warning=F}
+ggplot(prob3.dat, aes(x=sqft, y=price, color=group, size=price)) +
+        geom_point() +
+        ggtitle("House Price by Square Footage with Trend Lines") +
+        geom_smooth(method=lm, se=F, fullrange=T)
+```
+
+It does appear that Albuquerque increases in price faster than either of the other two cities.
+
+###Part 3  
+
+We adjust the the house price by city by square footage of the house before running an ANCOVA.
+
+```{r, message=F, cache=T, warning=F}
+prob3.dat$group <- ordered(prob3.dat$group, levels = c("Albuquerque","Atlanta","Indianapolis"))
+#using interaction
+prob3.lm1 <- lm(price ~ group*sqft, data=prob3.dat)
+anova(prob3.lm1)
+summary(prob3.lm1)
+#not using interaction
+prob3.lm2 <- lm(price ~ group+sqft, data=prob3.dat)
+anova(prob3.lm2)
+summary(prob3.lm2)
+```
+
+Covariate is significant. Indinapolis is sig diff from atl
+
+###Part 4 
+Adjusted means of house price per city.
+```{r, message=F, cache=T, warning=F}
+adjustedMeans <- effect("group",prob3.lm2) 
+adjustedMeans
+adjustedMeans$se
+prob3.dat %>% 
+        group_by(group) %>% 
+        summarise(mean = mean(price)) 
+```
+We see that the average price of houses increases for Albuquerque but decreases for Indianapolis and Atlanta when we adjust for which city the house is in.
+
+###Part 5
+```{r, message=F, cache=T, warning=F}
+prob3.lm3 <- lm(price ~ group*sqft, data=prob3.dat)
+anova(prob3.lm3)
+summary(prob3.lm3)
+```
+
+Since not interaction is non sig, parallelism is met
+
+###Part 6
+```{r, message=F, cache=T, warning = F}
+par(mfrow=c(2,2))  
+plot(prob3.lm2)
+par(mfrow=c(1,1))
+```
+Assumptions don't look horrible. There is a little bit of deviation on the tails, but it's acceptable.
+
+###Part 7
+We could see how the three different cities valued square footage differently. Albuquerque seems to place more value on increased square footage; as the square footage increased, the price of homes in Albuquerque increased faster than either of the other two cities.
+
+##Problem 4  
+###Part 1  
+
+Two way factorial; design equation is $$Y_{ij} = \mu + \tau_i + \beta_j + \gamma_{ij} + \epsilon_{ijk}$$
+
+###Part 2
